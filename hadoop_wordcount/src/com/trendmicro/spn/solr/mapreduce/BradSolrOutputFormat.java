@@ -14,9 +14,9 @@ import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
 
-public class BradSolrOutoutFormat extends FileOutputFormat<NullWritable, SolrInputDocument>
+public class BradSolrOutputFormat extends FileOutputFormat<NullWritable, SolrInputDocument>
 {
-	private static final Log LOG = LogFactory.getLog(BradSolrOutoutFormat.class);
+	private static final Log LOG = LogFactory.getLog(BradSolrOutputFormat.class);
 	
 	@Override
 	public RecordWriter<NullWritable, SolrInputDocument> getRecordWriter(

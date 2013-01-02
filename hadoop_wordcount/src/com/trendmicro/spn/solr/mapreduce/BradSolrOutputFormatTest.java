@@ -36,7 +36,7 @@ public class BradSolrOutputFormatTest extends Configured implements Tool
     public int run(String[] args) throws Exception
     {
         if (args.length != 3) {
-            System.err.format("Usage: %s <in> <out> <core_name>\n", this.getClass().getName());
+            System.err.format("Usage: %s <in> <out>\n", this.getClass().getName());
             return 2;
         }
 
@@ -48,14 +48,13 @@ public class BradSolrOutputFormatTest extends Configured implements Tool
         job.setMapOutputValueClass(Text.class);
 
         job.setReducerClass(MyReducer.class);
-        job.setOutputFormatClass(SolrOutputFormat.class);
+        job.setOutputFormatClass(BradSolrOutputFormat.class);
         job.setOutputKeyClass(NullWritable.class);
         job.setOutputValueClass(SolrInputDocument.class);
         job.setNumReduceTasks(2);
 
         FileInputFormat.addInputPaths(job, args[0]);
-        SolrOutputFormat.setOutputPath(job, new Path(args[1]));
-        SolrOutputFormat.setSolrCoreName(job, args[2]);
+        BradSolrOutputFormat.setOutputPath(job, new Path(args[1]));
 
         return (job.waitForCompletion(true) ? 0 : 1);
     }
