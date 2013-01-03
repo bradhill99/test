@@ -1,6 +1,10 @@
 package com.trendmicro.spn.solr.mapreduce;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,21 +32,26 @@ public class BradSolrOutputFormatTest extends Configured implements Tool
             throws IOException, InterruptedException
         {
         	LOG.info("input key:" + key.toString());
+        	String valueStr = "";
         	for(Text val : values) {
         		LOG.info("input values:" + val.toString());
+        		valueStr = val.toString();
         	}
-        	
-//        	doc1.addField( "id", "id1", 1.0f );
-//    	    doc1.addField( "name", "doc1", 1.0f );
-//    	    doc1.addField( "price", 10 );
-//    	    
-            SolrInputDocument doc = new SolrInputDocument();
-            doc.setField("id", "id1");
-            doc.setField( "name", "doc_brad", 1.0f );
-//            for (Text val : values) {
-//                doc.setField("content", val.toString());
-//            }
-            context.write(NullWritable.get(), doc);
+
+        	SolrInputDocument doc = new SolrInputDocument();        	
+        	StringTokenizer tokenizer = new StringTokenizer(valueStr);
+			while (tokenizer.hasMoreTokens()) {
+				Pattern datePatt = Pattern.compile("(.*)=(.*)");
+				Matcher m = datePatt.matcher(tokenizer.nextToken());
+				if (m.matches()) {
+				  LOG.info("key=" + m.group(1) + ", value=" + m.group(2));		            
+		          doc.addField(m.group(1), URLDecoder.decode(m.group(2), "UTF-8"));
+				}
+			}
+			
+			if (!doc.isEmpty()) {
+				context.write(NullWritable.get(), doc);
+			}
         }
     }
 
