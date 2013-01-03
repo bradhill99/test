@@ -36,12 +36,13 @@ public class BradSolrOutputFormatTest extends Configured implements Tool
 //    	    doc1.addField( "name", "doc1", 1.0f );
 //    	    doc1.addField( "price", 10 );
 //    	    
-//            SolrInputDocument doc = new SolrInputDocument();
-//            doc.setField("id", key.get());
+            SolrInputDocument doc = new SolrInputDocument();
+            doc.setField("id", "id1");
+            doc.setField( "name", "doc_brad", 1.0f );
 //            for (Text val : values) {
 //                doc.setField("content", val.toString());
 //            }
-//            context.write(NullWritable.get(), doc);
+            context.write(NullWritable.get(), doc);
         }
     }
 
