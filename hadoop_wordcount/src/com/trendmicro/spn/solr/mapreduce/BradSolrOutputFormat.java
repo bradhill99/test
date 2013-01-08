@@ -1,6 +1,7 @@
 package com.trendmicro.spn.solr.mapreduce;
 
 import java.io.IOException;
+import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,11 +29,21 @@ public class BradSolrOutputFormat extends FileOutputFormat<NullWritable, SolrInp
     class SolrRecordWriter extends RecordWriter<NullWritable, SolrInputDocument>
     {
     	private SolrServer server = null;
-    	// hard-coded for the time being
-    	private final String url = new String("http://brad01.spn.tw.trendnet.org:8983/solr");
+
+    	private String getUrl() {
+    		String urls[] = {"http://10.31.66.58:8983/solr",
+    						"http://10.31.66.59:8983/solr",
+    						"http://10.31.66.71:8983/solr",
+    						"http://10.31.66.72:8983/solr"};
+    		
+    		Random generator = new Random();    		
+    		int r = generator.nextInt(urls.length);
+    		LOG.info("random number=" + r + ", return server:" + urls[r]);
+    		return urls[r];
+    	}
     	
         public SolrRecordWriter() {
-        	this.server = new HttpSolrServer(url);
+        	this.server = new HttpSolrServer(this.getUrl());
         }
 
         @Override
