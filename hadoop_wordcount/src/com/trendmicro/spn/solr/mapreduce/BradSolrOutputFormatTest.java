@@ -74,7 +74,7 @@ public class BradSolrOutputFormatTest extends Configured implements Tool
         job.setOutputFormatClass(BradSolrOutputFormat.class);
         job.setOutputKeyClass(NullWritable.class);
         job.setOutputValueClass(BradSolrOutputFormat.class);
-        job.setNumReduceTasks(2);
+        job.setNumReduceTasks(10);
 
         FileInputFormat.addInputPaths(job, args[0]);
         BradSolrOutputFormat.setOutputPath(job, new Path(args[1]));
