@@ -5,19 +5,22 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
-
 public class TestDataGenerator {
 	// id=sha1 weight=float price=float popularity=int
 	public static void main(String[] args) throws Exception {
+		if (args.length != 2) {
+			throw new Exception("usage: TestDataGenerator #records output_file_name");
+		}
+		
 	  FileWriter fstream = null;
 	  BufferedWriter out = null;
 
 	  try{
 		  // Create file 
-		fstream = new FileWriter("d:\\out.txt");
+		fstream = new FileWriter(args[0]);
 		out = new BufferedWriter(fstream);
 
-		int cnt = 100;		
+		int cnt = Integer.parseInt(args[1]);
 		while(cnt-- > 0) {
 			String str = "id=%sha1% weight=%weight_float% price=%price_float% popularity=%po_int% title=%title%";
 			// id=
