@@ -12,7 +12,7 @@
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/apache-solr-4.0.0/dist/apache-solr-analysis-extras-4.0.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/apache-solr-4.0.0/dist/apache-solr-cell-4.0.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/apache-solr-4.0.0/dist/apache-solr-clustering-4.0.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/apache-solr-4.0.0/dist/apache-solr-core-4.0.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/apache-solr-4.0.0/dist/apache-solr-core-4.0.0.jar" sourcepath="C:/Users/brad_liu/Downloads/apache-solr-4.0.0_src"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/apache-solr-4.0.0/dist/apache-solr-dataimporthandler-4.0.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/apache-solr-4.0.0/dist/apache-solr-dataimporthandler-extras-4.0.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/apache-solr-4.0.0/dist/apache-solr-langid-4.0.0.jar"/>

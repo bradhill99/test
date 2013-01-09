@@ -58,8 +58,8 @@ public class BradSolrOutputFormatTest extends Configured implements Tool
     @Override
     public int run(String[] args) throws Exception
     {
-        if (args.length != 2) {
-            System.err.format("Usage: %s <in> <out>\n", this.getClass().getName());
+        if (args.length != 3) {
+            System.err.format("Usage: %s <in> <out> <solrip:port[,...]>\n", this.getClass().getName());
             return 2;
         }
 
@@ -78,6 +78,7 @@ public class BradSolrOutputFormatTest extends Configured implements Tool
 
         FileInputFormat.addInputPaths(job, args[0]);
         BradSolrOutputFormat.setOutputPath(job, new Path(args[1]));
+        BradSolrOutputFormat.setSolrServerList(job, args[2]);
 
         return (job.waitForCompletion(true) ? 0 : 1);
     }
