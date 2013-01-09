@@ -26,10 +26,10 @@ import org.apache.solr.common.SolrInputDocument;
 public class StressTest {
 	private String getUrl() {
 		// POC
-		//String[] urls = {"10.31.66.58:8983","10.31.66.59:8983","10.31.66.71:8983","10.31.66.72:8983"};
+		String[] urls = {"10.31.66.58:8983","10.31.66.59:8983","10.31.66.71:8983","10.31.66.72:8983"};
 		
 		// office lab
-		String[] urls = {"10.1.112.93:8983","10.1.112.99:8983"};
+		//String[] urls = {"10.1.112.93:8983","10.1.112.99:8983"};
 		
 		Random generator = new Random();    		
 		int r = generator.nextInt(urls.length);
@@ -38,32 +38,23 @@ public class StressTest {
 	}
 	
 	public void run(String[] args) {
-//        if (args.length != 3) {
-//            System.err.format("Usage: %s input_file solrnodeip:port[,...]\n", this.getClass().getName());
-//            return;
-//        }
-               
         // init solr server
         SolrServer solrServer = new HttpSolrServer(this.getUrl());
-        // while loop
-        
-        //File file = new File("./out.txt");
-        File file = new File("d:\\out.txt");
+       
+        File file = new File("./out.txt");
+        //File file = new File("d:\\out.txt");
         FileInputStream fis = null;
         BufferedInputStream bis = null;
-        DataInputStream dis = null;
 
         try {
           fis = new FileInputStream(file);
 
           // Here BufferedInputStream is added for fast reading.
           bis = new BufferedInputStream(fis);
-          dis = new DataInputStream(bis);
           BufferedReader d = new BufferedReader(new InputStreamReader(bis));
 
-          // dis.available() returns 0 if the file does not have more lines.
-          while (dis.available() != 0) {
-        	String valueStr = d.readLine();
+          String valueStr;
+          while ( (valueStr = d.readLine()) != null ) {
 			//System.out.println(valueStr);
 			StringTokenizer tokenizer = new StringTokenizer(valueStr);
 			SolrInputDocument doc = new SolrInputDocument();        
@@ -78,14 +69,13 @@ public class StressTest {
 			}
 			
         	UpdateResponse res = solrServer.add(doc);
-    	    System.out.println("res=" + res.toString());
+    	    //System.out.println("res=" + res.toString());
     	    solrServer.commit();
           }
 
           // dispose all the resources after using them.
           fis.close();
           bis.close();
-          dis.close();
         }
     	catch (FileNotFoundException e) {
     		e.printStackTrace();
