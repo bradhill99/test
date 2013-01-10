@@ -16,11 +16,10 @@ public class TestDataGenerator {
 	  BufferedWriter out = null;
 
 	  try{
+		int cnt = Integer.parseInt(args[0]);
 		  // Create file 
-		fstream = new FileWriter(args[0]);
+		fstream = new FileWriter(args[1]);
 		out = new BufferedWriter(fstream);
-
-		int cnt = Integer.parseInt(args[1]);
 		while(cnt-- > 0) {
 			String str = "id=%sha1% weight=%weight_float% price=%price_float% popularity=%po_int% title=%title%";
 			// id=

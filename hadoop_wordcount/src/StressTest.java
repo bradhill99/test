@@ -1,12 +1,13 @@
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLDecoder;
+import java.text.DateFormat;
+import java.util.Calendar;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -14,6 +15,7 @@ import java.util.regex.Pattern;
 
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrServer;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
@@ -26,10 +28,10 @@ import org.apache.solr.common.SolrInputDocument;
 public class StressTest {
 	private String getUrl() {
 		// POC
-		String[] urls = {"10.31.66.58:8983","10.31.66.59:8983","10.31.66.71:8983","10.31.66.72:8983"};
+		//String[] urls = {"10.31.66.58:8983","10.31.66.59:8983","10.31.66.71:8983","10.31.66.72:8983"};
 		
 		// office lab
-		//String[] urls = {"10.1.112.93:8983","10.1.112.99:8983"};
+		String[] urls = {"10.1.112.93:8983","10.1.112.99:8983"};
 		
 		Random generator = new Random();    		
 		int r = generator.nextInt(urls.length);
@@ -39,10 +41,11 @@ public class StressTest {
 	
 	public void run(String[] args) {
         // init solr server
-        SolrServer solrServer = new HttpSolrServer(this.getUrl());
+        SolrServer solrServer = new ConcurrentUpdateSolrServer(this.getUrl(), 100, 20);
+		//SolrServer solrServer = new HttpSolrServer(this.getUrl());
        
-        File file = new File("./out.txt");
-        //File file = new File("d:\\out.txt");
+        //File file = new File("./out.txt");
+        File file = new File("d:\\out.txt");
         FileInputStream fis = null;
         BufferedInputStream bis = null;
 
@@ -68,33 +71,39 @@ public class StressTest {
 				}
 			}
 			
-        	UpdateResponse res = solrServer.add(doc);
+        	//UpdateResponse res = solrServer.add(doc, 10000);
+			UpdateResponse res = solrServer.add(doc);
     	    //System.out.println("res=" + res.toString());
-    	    solrServer.commit();
+    	    //solrServer.commit();
           }
 
           // dispose all the resources after using them.
           fis.close();
           bis.close();
+          
+          System.out.println("before commit");
+          //solrServer.commit();
+          System.out.println("after commit");
         }
     	catch (FileNotFoundException e) {
     		e.printStackTrace();
     	} catch (IOException e) {
 	        e.printStackTrace();
     	}
-        // init solr document
-        // send update command
-        // commit
- catch (SolrServerException e) {
+    	catch (SolrServerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-        
+		}        
 	}
 	
 	public static void main(String[] args) throws Exception {
 		StressTest test = new StressTest();
 		test.run(args);
-		
+		System.out.println("bye~~");
+	    Calendar cal = Calendar.getInstance();
+	    DateFormat df = DateFormat.getDateTimeInstance(DateFormat.FULL,
+	        DateFormat.MEDIUM);
+
+	    System.out.println(df.format(cal.getTime()));
 	}
 }
