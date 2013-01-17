@@ -31,7 +31,7 @@ public class StressTest {
 		//String[] urls = {"10.31.66.58:8983","10.31.66.59:8983","10.31.66.71:8983","10.31.66.72:8983"};
 		
 		// office lab
-		String[] urls = {"10.1.112.93:8983","10.1.112.99:8983"};
+		String[] urls = {"10.1.144.250:8983","10.1.144.251:8983"};
 		
 		Random generator = new Random();    		
 		int r = generator.nextInt(urls.length);
@@ -41,7 +41,7 @@ public class StressTest {
 	
 	public void run(String[] args) {
         // init solr server
-        SolrServer solrServer = new ConcurrentUpdateSolrServer(this.getUrl(), 100, 20);
+        SolrServer solrServer = new ConcurrentUpdateSolrServer(this.getUrl(), 1, 1);
 		//SolrServer solrServer = new HttpSolrServer(this.getUrl());
        
         //File file = new File("./out.txt");
