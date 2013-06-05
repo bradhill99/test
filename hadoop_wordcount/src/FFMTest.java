@@ -46,20 +46,20 @@ import org.apache.solr.common.params.ModifiableSolrParams;
  * @author brad_liu
  *
  */
-public class StressTest {
+public class FFMTest {
 
 	private String getUrl() {
 		// POC
 		//String[] urls = {"10.31.66.58:8983","10.31.66.59:8983","10.31.66.71:8983","10.31.66.72:8983"};
 		
 		// office lab
-		String[] urls = {"10.31.66.71:8080"};
+		String[] urls = {"10.31.66.59:9999"};
 		// String[] urls = {"10.31.66.59:9900"};
 		
 		Random generator = new Random();    		
 		int r = generator.nextInt(urls.length);
 		// return this format http://10.31.66.58:8983/solr
-		return "http://" + urls[r] + "/solr/ad_hoc_test1";
+		return "http://" + urls[r] + "/solr/ffm";
 	}
 	
 	public void run(String[] args) throws InterruptedException, URISyntaxException {

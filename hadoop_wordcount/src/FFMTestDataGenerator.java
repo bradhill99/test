@@ -5,7 +5,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
-public class TestDataGenerator {
+public class FFMTestDataGenerator {
 	// id=sha1 weight=float price=float popularity=int
 	public static void main(String[] args) throws Exception {
 		if (args.length != 2) {
@@ -21,23 +21,14 @@ public class TestDataGenerator {
 		fstream = new FileWriter(args[1]);
 		out = new BufferedWriter(fstream);
 		while(cnt-- > 0) {
-			String str = "id=%sha1% i=%weight_float% c=%price_float% di=%po_int% dc=%title%";
-			// id=
+			String str = "path=%sha1% sha1=%path%";
+
 			String sha1 = getSha1(Integer.toString(cnt));
 			str = str.replaceFirst("%sha1%", sha1);
 
     		Random generator = new Random();
     		float f = generator.nextFloat();
-			// weight=
-    		str = str.replaceFirst("%weight_float%", Float.toString(f));
-    		// price=
-    		str = str.replaceFirst("%price_float%", Float.toString(f));
-    		// popularity
-    		int i = generator.nextInt(100) + 1;
-    		str = str.replaceFirst("%po_int%", Integer.toString(i));
-    		
-    		// title 
-    		str = str.replaceFirst("%title%", Integer.toString(cnt));
+    		str = str.replaceFirst("%path%", Float.toString(f));    		
     		out.write(str + "\n");
 		}
 		
