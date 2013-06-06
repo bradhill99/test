@@ -19,30 +19,22 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrServer;
-import org.apache.solr.client.solrj.impl.HttpClientUtil;
-import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
-import org.apache.solr.common.params.ModifiableSolrParams;
 
 /**
  * Read sample
@@ -61,10 +53,10 @@ public class StressTest {
 	            CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(ClientContext.CREDS_PROVIDER);
 	            HttpHost targetHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
 	            Credentials creds = credsProvider.getCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()));
-	            if (creds == null)
+	            if (creds == null) {
 	                throw new HttpException("No credentials for preemptive authentication");
-	            authState.setAuthScheme(new BasicScheme());
-	            authState.setCredentials(creds);
+	            }
+	            authState.update(new BasicScheme(), creds);
 	        }
 	    }
 	}
@@ -85,7 +77,7 @@ public class StressTest {
 	
 	public void run(String[] args) throws InterruptedException, URISyntaxException {		
     	URI uri = new URI(this.getUrl());
-    	DefaultHttpClient httpClient = new DefaultHttpClient(new ThreadSafeClientConnManager());
+    	DefaultHttpClient httpClient = new DefaultHttpClient(new PoolingClientConnectionManager());
 
     	httpClient.getCredentialsProvider().setCredentials(
 				new AuthScope(uri.getHost(), uri.getPort()),
@@ -93,6 +85,10 @@ public class StressTest {
     	
     	httpClient.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
     	
+    	PoolingClientConnectionManager mgr = (PoolingClientConnectionManager)httpClient.getConnectionManager();
+    	mgr.setDefaultMaxPerRoute(32);
+    	mgr.setMaxTotal(128);
+
 //	      ModifiableSolrParams params = new ModifiableSolrParams();
 //	      params.set(HttpClientUtil.PROP_MAX_CONNECTIONS, 128);
 //	      params.set(HttpClientUtil.PROP_MAX_CONNECTIONS_PER_HOST, 32);
@@ -100,9 +96,9 @@ public class StressTest {
 //	      params.set(HttpClientUtil.PROP_BASIC_AUTH_PASS, "pass");
 //	      HttpClient httpClient =  HttpClientUtil.createClient(params);
 	      
-	      
+    	
         // init solr server
-        SolrServer solrServer = new ConcurrentUpdateSolrServer(this.getUrl(), httpClient, 3000, 5);
+        SolrServer solrServer = new ConcurrentUpdateSolrServer(this.getUrl(), httpClient, 3000, 3);
 		//SolrServer solrServer = new HttpSolrServer(this.getUrl());
        
         //File file = new File("./out.txt");
