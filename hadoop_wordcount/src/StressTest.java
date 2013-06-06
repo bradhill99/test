@@ -24,11 +24,14 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
@@ -47,7 +50,25 @@ import org.apache.solr.common.params.ModifiableSolrParams;
  *
  */
 public class StressTest {
+	static class PreemptiveAuthInterceptor implements HttpRequestInterceptor {
 
+	    public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
+	        AuthState authState = (AuthState) context.getAttribute(ClientContext.TARGET_AUTH_STATE);
+
+	        // If no auth scheme avaialble yet, try to initialize it
+	        // preemptively
+	        if (authState.getAuthScheme() == null) {
+	            CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(ClientContext.CREDS_PROVIDER);
+	            HttpHost targetHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+	            Credentials creds = credsProvider.getCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()));
+	            if (creds == null)
+	                throw new HttpException("No credentials for preemptive authentication");
+	            authState.setAuthScheme(new BasicScheme());
+	            authState.setCredentials(creds);
+	        }
+	    }
+	}
+	
 	private String getUrl() {
 		// POC
 		//String[] urls = {"10.31.66.58:8983","10.31.66.59:8983","10.31.66.71:8983","10.31.66.72:8983"};
@@ -62,14 +83,15 @@ public class StressTest {
 		return "http://" + urls[r] + "/solr/ad_hoc_test1";
 	}
 	
-	public void run(String[] args) throws InterruptedException, URISyntaxException {
-		
+	public void run(String[] args) throws InterruptedException, URISyntaxException {		
     	URI uri = new URI(this.getUrl());
-    	DefaultHttpClient httpClient = new DefaultHttpClient();
+    	DefaultHttpClient httpClient = new DefaultHttpClient(new ThreadSafeClientConnManager());
 
     	httpClient.getCredentialsProvider().setCredentials(
-				new AuthScope(uri.getHost(), uri.getPort(),AuthScope.ANY_SCHEME),
+				new AuthScope(uri.getHost(), uri.getPort()),
 				new UsernamePasswordCredentials("solrcloud_trial", "pass"));
+    	
+    	httpClient.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
     	
 //	      ModifiableSolrParams params = new ModifiableSolrParams();
 //	      params.set(HttpClientUtil.PROP_MAX_CONNECTIONS, 128);
@@ -80,7 +102,7 @@ public class StressTest {
 	      
 	      
         // init solr server
-        SolrServer solrServer = new ConcurrentUpdateSolrServer(this.getUrl(), 3000, 10);
+        SolrServer solrServer = new ConcurrentUpdateSolrServer(this.getUrl(), httpClient, 3000, 5);
 		//SolrServer solrServer = new HttpSolrServer(this.getUrl());
        
         //File file = new File("./out.txt");
