@@ -15,31 +15,14 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.HttpException;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.AuthState;
-import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.protocol.ClientContext;
-import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.ExecutionContext;
-import org.apache.http.protocol.HttpContext;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.ConcurrentUpdateSolrServer;
-import org.apache.solr.client.solrj.impl.HttpClientUtil;
-import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
-import org.apache.solr.common.params.ModifiableSolrParams;
 
 /**
  * Read sample
@@ -49,12 +32,7 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 public class FFMTest {
 
 	private String getUrl() {
-		// POC
-		//String[] urls = {"10.31.66.58:8983","10.31.66.59:8983","10.31.66.71:8983","10.31.66.72:8983"};
-		
-		// office lab
 		String[] urls = {"10.31.66.59:9999"};
-		// String[] urls = {"10.31.66.59:9900"};
 		
 		Random generator = new Random();    		
 		int r = generator.nextInt(urls.length);
@@ -80,7 +58,7 @@ public class FFMTest {
 	      
 	      
         // init solr server
-        SolrServer solrServer = new ConcurrentUpdateSolrServer(this.getUrl(), 3000, 10);
+        SolrServer solrServer = new ConcurrentUpdateSolrServer(this.getUrl(), 100, 1);
 		//SolrServer solrServer = new HttpSolrServer(this.getUrl());
        
         //File file = new File("./out.txt");
@@ -138,7 +116,7 @@ public class FFMTest {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		StressTest test = new StressTest();
+		FFMTest test = new FFMTest();
 		test.run(args);
 		System.out.println("bye~~");
 	    Calendar cal = Calendar.getInstance();
