@@ -21,7 +21,7 @@ public class TestDataGenerator {
 		fstream = new FileWriter(args[1]);
 		out = new BufferedWriter(fstream);
 		while(cnt-- > 0) {
-			String str = "id=%sha1% i=%weight_float% c=%price_float% di=%po_int% dc=%title%";
+			String str = "id=%sha1% weight=%weight_float% price=%price_float% popularity=%po_int% title=%title%";
 			// id=
 			String sha1 = getSha1(Integer.toString(cnt));
 			str = str.replaceFirst("%sha1%", sha1);
