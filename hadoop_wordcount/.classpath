@@ -3,12 +3,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-1.0.4/hadoop-ant-1.0.4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-1.0.4/hadoop-client-1.0.4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-1.0.4/hadoop-core-1.0.4.jar" sourcepath="C:/Users/brad_liu/Downloads/hadoop-1.0.4/src"/>
-	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-1.0.4/hadoop-examples-1.0.4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-1.0.4/hadoop-minicluster-1.0.4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-1.0.4/hadoop-test-1.0.4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-1.0.4/hadoop-tools-1.0.4.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/commons-codec-1.8/commons-codec-1.8.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/solr-4.2.0/dist/solr-analysis-extras-4.2.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/solr-4.2.0/dist/solr-cell-4.2.0.jar"/>
@@ -31,5 +25,6 @@
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/solr-4.2.0/dist/solrj-lib/wstx-asl-3.2.7.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/solr-4.2.0/dist/solrj-lib/zookeeper-3.4.5.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/commons-cli-1.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-core-0.20.2-cdh3u5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
