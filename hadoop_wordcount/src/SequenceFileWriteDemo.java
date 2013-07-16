@@ -1,3 +1,5 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
 
@@ -11,31 +13,36 @@ import org.apache.hadoop.io.Text;
 
 public class SequenceFileWriteDemo {
   
-  private static final String[] DATA = {
-    "One, two, buckle my shoe",
-    "Three, four, shut the door",
-    "Five, six, pick up sticks",
-    "Seven, eight, lay them straight",
-    "Nine, ten, a big fat hen"
-  };
-  
+    private static String readFileAsString(String filePath) throws IOException {
+        StringBuffer fileData = new StringBuffer();
+        BufferedReader reader = new BufferedReader(
+                new FileReader(filePath));
+        char[] buf = new char[1024];
+        int numRead=0;
+        while((numRead=reader.read(buf)) != -1){
+            String readData = String.valueOf(buf, 0, numRead);
+            fileData.append(readData);
+        }
+        reader.close();
+        return fileData.toString();
+    }
+    
   public static void main(String[] args) throws IOException {
     String uri = args[0];
     Configuration conf = new Configuration();
     FileSystem fs = FileSystem.get(URI.create(uri), conf);
     Path path = new Path(uri);
 
-    IntWritable key = new IntWritable();
+    Text key = new Text();
     Text value = new Text();
     SequenceFile.Writer writer = null;
     try {
       writer = SequenceFile.createWriter(fs, conf, path,
           key.getClass(), value.getClass());
       
-      for (int i = 0; i < 100; i++) {
-        key.set(100 - i);
-        value.set(DATA[i % DATA.length]);
-        System.out.printf("[%s]\t%s\t%s\n", writer.getLength(), key, value);
+      for (int i = 1; i < args.length; i++) {
+        key.set(args[i]);        
+        value.set(readFileAsString(args[i]));        
         writer.append(key, value);
       }
     } finally {
