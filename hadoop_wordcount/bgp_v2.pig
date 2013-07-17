@@ -5,9 +5,9 @@ register './lib/httpclient-4.2.3.jar';
 register './lib/httpmime-4.2.3.jar';
 
 %default SOLR_SERVER_LIST       'spn-s-solrcloud-reverse-1v:8983';
-%default COLLECTION                     'test3';
-%default USERNAME                       'test3';
-%default PASSWORD                       'test123';
+%default COLLECTION                     'bgp';
+%default USERNAME                       'bgp';
+%default PASSWORD                       'bgp123';
 
 set job.name                                    'indexing $COLLECTION [hackthon2]';
 set debug                                       off;    -- on or off

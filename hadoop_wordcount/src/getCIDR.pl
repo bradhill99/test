@@ -10,8 +10,8 @@ if ($#ARGV + 1 != 1) {
   exit;
 }
 
-my $credential = "test3:test123";
-my $collection = "test3";
+my $credential = "bgp:bgp123";
+my $collection = "bgp";
 my $solr_server = "http://spn-s-solrcloud-reverse-1v.sjdc:8983";
 my $num_docs = 1000;
 
@@ -21,7 +21,7 @@ my $result = `$url`;
 my $decoded_json = decode_json( $result);
 my $docs = $decoded_json->{'response'}{'docs'};
 
-foreach my $item(@$docs) { 
+foreach my $item(@$docs) {
     print "ip=" . $item->{ip_s} . ", cidr=" . $item->{cidr_i} . "\n";
     print "name=$item->{name_s}" . "\n";
 }
