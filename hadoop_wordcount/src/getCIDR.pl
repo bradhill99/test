@@ -10,13 +10,15 @@ if ($#ARGV + 1 != 1) {
   exit;
 }
 
-#my $url = "curl -s https://graph.facebook.com/?ids=http://www.filestube.com";
-my $url = "curl -s --user test3:test123 -d 'q=name_s:*$ARGV[0]*&wt=json&rows=1000&indent=true' http://spn-s-solrcloud-reverse-1v.sjdc:8983/solr/test3/select";
+my $credential = "test3:test123";
+my $collection = "test3";
+my $solr_server = "http://spn-s-solrcloud-reverse-1v.sjdc:8983";
+my $num_docs = 1000;
+
+my $url = "curl -s --user $credential -d 'q=name_s:*$ARGV[0]*&wt=json&rows=$num_docs&indent=true' $solr_server/solr/$collection/select";
 
 my $result = `$url`;
-#print $result;
 my $decoded_json = decode_json( $result);
-#print Dumper $decoded_json;
 my $docs = $decoded_json->{'response'}{'docs'};
 
 foreach my $item(@$docs) { 
