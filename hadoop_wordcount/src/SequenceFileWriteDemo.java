@@ -1,4 +1,7 @@
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
@@ -6,25 +9,19 @@ import java.net.URI;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IOUtils;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 
-public class SequenceFileWriteDemo {
-  
-    private static String readFileAsString(String filePath) throws IOException {
-        StringBuffer fileData = new StringBuffer();
-        BufferedReader reader = new BufferedReader(
-                new FileReader(filePath));
-        char[] buf = new char[1024];
-        int numRead=0;
-        while((numRead=reader.read(buf)) != -1){
-            String readData = String.valueOf(buf, 0, numRead);
-            fileData.append(readData);
-        }
-        reader.close();
-        return fileData.toString();
+public class SequenceFileWriteDemo {  
+    private static byte[] readFileAsByte(String filePath) throws IOException {
+        File file = new File(filePath);
+        byte[] fileData = new byte[(int)file.length()];
+        DataInputStream dis = new DataInputStream((new FileInputStream(file)));
+        dis.readFully(fileData);
+        dis.close();
+        return fileData;
     }
     
   public static void main(String[] args) throws IOException {
@@ -34,15 +31,15 @@ public class SequenceFileWriteDemo {
     Path path = new Path(uri);
 
     Text key = new Text();
-    Text value = new Text();
+
     SequenceFile.Writer writer = null;
     try {
       writer = SequenceFile.createWriter(fs, conf, path,
-          key.getClass(), value.getClass());
+          key.getClass(), BytesWritable.class);
       
       for (int i = 1; i < args.length; i++) {
-        key.set(args[i]);        
-        value.set(readFileAsString(args[i]));        
+        key.set(args[i]);
+        BytesWritable value = new BytesWritable(readFileAsByte(args[i]));        
         writer.append(key, value);
       }
     } finally {
