@@ -1,34 +1,36 @@
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.PutSortReducer;
-import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
-import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
-import org.apache.hadoop.hbase.mapreduce.TableMapper;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -41,42 +43,48 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class HFileGenerationJob extends Configured implements Tool {
     private static final Log LOG = LogFactory.getLog(HFileGenerationJob.class);
-    private static Pattern datPatt = Pattern.compile("(.*)=(.*)");
+    private static Pattern dataPattern = Pattern.compile("(.*)=(.*)");
+    private static String FAMILY_COMMAND_LINE = "family.value";
     final static String NAME = "HFileGenerationJob";
 
     /**
      * Mapper.
      */
     static class Exporter extends Mapper<LongWritable, Text, ImmutableBytesWritable, Put> {
-        /**
-         * @param row
-         *            The current table row key.
-         * @param value
-         *            The columns.
-         * @param context
-         *            The current context.
-         * @throws IOException
-         *             When something is broken with the data.
-         * @see org.apache.hadoop.mapreduce.Mapper#map(KEYIN, VALUEIN,
-         *      org.apache.hadoop.mapreduce.Mapper.Context)
-         */
+        private static String family = "";
+        
+        @Override
+        protected void setup(Context context) throws IOException, InterruptedException {
+            family = context.getConfiguration().get(FAMILY_COMMAND_LINE);
+            LOG.info("passed family is :" + family);
+        }
+        
         @Override
         public void map(LongWritable key, Text value, Context context) throws IOException {
-            LOG.info("key=" + key + "," + "value=" + value);
-         
-            try {
+            java.util.Map<String, String> nameMap = new HashMap<String, String>(); // field name convert map
+            
+            // parse input string into map
             String[] nameValueArray = value.toString().split(",");
             for (String nameValue : nameValueArray) {
-                Matcher m = datPatt.matcher(nameValue);
+                Matcher m = dataPattern.matcher(nameValue);
                 if (m.matches()) {
-                    LOG.info("key=" + m.group(1) + "," + "value=" + m.group(2));
-                    String keyStr = m.group(1);
-                    String valueStr = m.group(2);
-                    Put put = new Put(keyStr.getBytes());
-                    put.add("grade".getBytes(), keyStr.getBytes(), valueStr.getBytes());
-                    context.write(new ImmutableBytesWritable(keyStr.getBytes()), put);
+                    nameMap.put(m.group(1), m.group(2));
                 }
             }
+            
+            try {
+                // extract row key value: EQP_ID and CH_ID
+                String rowKey = nameMap.remove("EQP_ID")+nameMap.remove("CH_ID")+nameMap.remove("EVENT_TIME_START");
+                Put put = new Put(rowKey.getBytes());
+                
+                Iterator iter = nameMap.entrySet().iterator();
+                while (iter.hasNext()) {
+                    java.util.Map.Entry entry = (java.util.Map.Entry) iter.next();
+                    String keyStr = (String)entry.getKey();
+                    String valStr = (String)entry.getValue();
+                    put.add(family.getBytes(), keyStr.getBytes(), valStr.getBytes());
+                }
+                context.write(new ImmutableBytesWritable(rowKey.getBytes()), put);
             }
             catch(Exception ex) {
                 LOG.error("ex:", ex);
@@ -95,15 +103,26 @@ public class HFileGenerationJob extends Configured implements Tool {
      * @throws IOException
      *             When setting up the job fails.
      */
-    public static Job createSubmittableJob(Configuration conf, String[] args) throws IOException {
-        String tableName = args[0];
-        Path inputDir = new Path(args[1]);
-        Path outputDir = new Path(args[2]);
+    public static Job createSubmittableJob(Configuration conf, CommandLine line) throws IOException {
+        String tableName = line.getOptionValue("t");
+        Path inputDir = new Path(line.getOptionValue("i"));
+        Path outputDir = new Path(line.getOptionValue("o"));
+        conf.set(FAMILY_COMMAND_LINE, line.getOptionValue("f"));
         Job job = new Job(conf, NAME + "_" + tableName);
         job.setJobName(NAME + "_" + tableName);
         job.setJarByClass(Exporter.class);
 
-        FileInputFormat.setInputPaths(job, inputDir);
+        // filter input file
+        FileSystem fs = FileSystem.get(conf);
+        FileStatus[] listStatus = fs.globStatus(new Path(inputDir + "/part-r*"));
+        List<Path> inputhPaths = new ArrayList<Path>();
+        for (FileStatus fstat : listStatus) {
+            inputhPaths.add(fstat.getPath());
+        }
+
+        FileInputFormat.setInputPaths(job,
+                (Path[]) inputhPaths.toArray(new Path[inputhPaths.size()]));
+        
         FileOutputFormat.setOutputPath(job, outputDir);
                       
         job.setOutputKeyClass(ImmutableBytesWritable.class);
@@ -126,39 +145,50 @@ public class HFileGenerationJob extends Configured implements Tool {
     /*
      * @param errorMsg Error message. Can be null.
      */
-    private static void usage(final String errorMsg) {
+    private static void usage(final String errorMsg) throws ParseException {
         if (errorMsg != null && errorMsg.length() > 0) {
             System.err.println("ERROR: " + errorMsg);
         }
-        System.err
-                .println("Usage: HFileGenerationJob [-D <property=value>]* <tablename> <inputdir> <outputdir> [<versions> "
-                        + "[<starttime> [<endtime>]]]\n");
-        System.err.println("  Note: -D properties will be applied to the conf used. ");
-        System.err.println("  For example: ");
-        System.err.println("   -D mapred.output.compress=true");
-        System.err
-                .println("   -D mapred.output.compression.codec=org.apache.hadoop.io.compress.GzipCodec");
-        System.err.println("   -D mapred.output.compression.type=BLOCK");
-        System.err.println("  Additionally, the following SCAN properties can be specified");
-        System.err.println("  to control/limit what is exported..");
-        System.err.println("   -D " + TableInputFormat.SCAN_COLUMN_FAMILY + "=<familyName>");
+        System.err.println("Usage: HFileGenerationJob -f <column family> -t <tablename> -i <inputdir> -o <outputdir>");
     }
 
+    private static CommandLine parseCommaneLine(String[] otherArgs) throws ParseException {
+        CommandLine line = null; 
+        try {
+            CommandLineParser parser = new BasicParser();
+            Options options = new Options();
+            options.addOption("f", null, true, "column family");
+            options.addOption("t", null, true, "table name");
+            options.addOption("i", null, true, "input path");
+            options.addOption("o", null, true, "output path");
+            
+            line = parser.parse( options, otherArgs );
+        }
+        catch(ParseException ex) {
+            System.err.println("ex:" +ex);
+            throw ex;
+        }
+        
+        return line;
+    }
+    
     @Override
     public int run(String[] args) {
         try {
             Configuration conf = HBaseConfiguration.create();
+            //System.out.println("pass args=" + args);
             String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
             if (otherArgs.length < 2) {
                 usage(null);
                 return -1;
             }
 
+            CommandLine line = parseCommaneLine(otherArgs);
             // setup and submit the job
-            Job job = createSubmittableJob(conf, otherArgs);
+            Job job = createSubmittableJob(conf, line);
             return job.waitForCompletion(true) ? 0 : 1;
         } catch (Exception ex) {
-            LOG.error("Reading HFile failed.", ex);
+            LOG.error("ex:", ex);
             return 1;
         }
     }
