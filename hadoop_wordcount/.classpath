@@ -26,5 +26,6 @@
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/solr-4.2.0/dist/solrj-lib/zookeeper-3.4.5.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/commons-cli-1.2.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-core-0.20.2-cdh3u5.jar"/>
+	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hbase-0.90.6-cdh3u4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
