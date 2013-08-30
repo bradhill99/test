@@ -149,7 +149,9 @@ public class ConvertJob extends Configured implements Tool {
                     buffer.append(",");
                 }
                 
-                buffer.append(key + "=" + val);                
+                String keyStr = (String)key;
+                keyStr = keyStr.toUpperCase();
+                buffer.append(keyStr + "=" + val);                
             } 
             
             context.write(null, new Text(buffer.toString()));
