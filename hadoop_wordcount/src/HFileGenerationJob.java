@@ -24,6 +24,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat;
 import org.apache.hadoop.hbase.mapreduce.PutSortReducer;
+import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -135,6 +136,8 @@ public class HFileGenerationJob extends Configured implements Tool {
         
         job.setMapperClass(Exporter.class);
         job.setReducerClass(PutSortReducer.class);
+
+        TableMapReduceUtil.addDependencyJars(job);
         
         HTable table = new HTable(conf, tableName);
         HFileOutputFormat.configureIncrementalLoad(job, table);
