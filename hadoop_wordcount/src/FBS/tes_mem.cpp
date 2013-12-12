@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include "libmemcached/memcached.h"
+#include "boost/thread.hpp"
 
 using namespace std;
 
@@ -22,12 +23,26 @@ class Cmemcached {
 private:
 	memcached_st *_memc;
 	//memcached_return _rc;
+	string _server_list;
 public:
-	Cmemcached(string server_list) : _memc(0) {
+	Cmemcached(string server_list) : _memc(0), _server_list(server_list) {
+		create_connection();
+	}
+	~Cmemcached() {
+		clean();
+	}
+
+	void clean() {
+		if (_memc != 0) {
+			memcached_free(_memc);
+		}
+	}
+
+	void create_connection() {
 		//string attr_str = "--REMOVE_FAILED_SERVERS --RETRY-TIMEOUT=1";
 		_memc = memcached_create(NULL);
 		//_memc= memcached(attr_str.c_str(), strlen(attr_str.c_str()));
-		memcached_server_st *servers= memcached_servers_parse(server_list.c_str());
+		memcached_server_st *servers= memcached_servers_parse(_server_list.c_str());
 		memcached_server_push(_memc, servers);
 		memcached_server_list_free(servers);
 
@@ -40,11 +55,7 @@ public:
 		cout << "MEMCACHED_BEHAVIOR_RETRY_TIMEOUT:" << memcached_behavior_get(_memc , MEMCACHED_BEHAVIOR_RETRY_TIMEOUT) << endl;
 		cout << "MEMCACHED_BEHAVIOR_SERVER_FAILURE_LIMIT:" << memcached_behavior_get(_memc , MEMCACHED_BEHAVIOR_SERVER_FAILURE_LIMIT) << endl;
 		cout << "MEMCACHED_BEHAVIOR_AUTO_EJECT_HOSTS:" << memcached_behavior_get(_memc , MEMCACHED_BEHAVIOR_AUTO_EJECT_HOSTS) << endl;
-	}
-	~Cmemcached() {
-		if (_memc != 0) {
-			memcached_free(_memc);
-		}
+		cout << "MEMCACHED_BEHAVIOR_DISTRIBUTION:" << memcached_behavior_get(_memc , MEMCACHED_BEHAVIOR_DISTRIBUTION) << endl;
 	}
 
 	char *get(const char *key, size_t key_length, size_t *value_length, uint32_t *flags, memcached_return_t *error) {
@@ -56,10 +67,29 @@ public:
 	}
 
 	void get_server_list(void) {
+		clean();
+		create_connection();
+		memcached_server_st *instance = memcached_server_get_last_disconnect(_memc);
+		if (instance != NULL) {
+			cout <<"disconnect hostname is:" << instance->hostname << endl;
+
+
+		}
 		memcached_server_st *servers= memcached_server_list(_memc);
-		cout <<"server count = " << memcached_server_list_count(servers) << endl;
-		cout <<"hostname= " << servers->hostname << endl;
+		int cnt = memcached_server_list_count(servers);
+		cout <<"server count = " << cnt << endl;
+		for (int idx = 0;idx < cnt; ++idx) {
+			cout <<"hostname= " << servers[idx].hostname << endl;
+		}
 	}
+
+	// will be invoked by boost thread lib
+    void operator()(){
+    	while(true) {
+    		sleep(10); // execute by 10 seconds
+    		get_server_list();
+    	}
+    }
 };
 
 void insert_data(Cmemcached &memcached) {
@@ -82,11 +112,73 @@ void insert_data(Cmemcached &memcached) {
 	}
 }
 
+void insert_data(Cmemcached &memcached, const string &key, const string &value) {
+	memcached_return rc;
+	rc = memcached.set(key.c_str(), strlen(key.c_str()), value.c_str(), strlen(value.c_str()), 0);
+	cout << "rc=" << rc << endl;
+
+	if (rc != 0) {
+		memcached.get_server_list();
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	const char *sz_servers = "10.1.145.17:11211, 10.1.144.41:11211";
 	Cmemcached memcached(sz_servers);
 	insert_data(memcached);
+
+	if (argc!=2) {
+		cout << "test_mem [insert|query]" << endl;
+
+		Cmemcached memcached_monitor(sz_servers);
+		boost::thread monitor_thread(boost::ref(memcached_monitor));
+		boost::posix_time::time_duration td( 0,0, 1, 0 );
+		while(true) {
+			if(monitor_thread.timed_join(td)){
+				break;
+			}
+		}
+		exit(0);
+	}
+
+	cout << "argv[1]=" << argv[1] << endl;
+	if (string("insert").compare(argv[1]) == 0 ) {
+		// doing insertion
+		cout << "insert\n";
+		while(1) {
+			string key, value;
+			cout << "key,value=";
+			cin >> key >> value;
+			//cout << "key=" << key << ", value=" << value << endl;
+			insert_data(memcached, key, value);
+			memcached.get_server_list();
+		}
+
+	}
+	else {
+		//doing query
+		cout << "query\n";
+		while(1) {
+			string key;
+			size_t val_len;
+			uint32_t flags;
+			memcached_return rc;
+
+			cout << "key=";
+			cin >> key;
+			//cout << "key=" << key << ", value=" << value << endl;
+			char *value = memcached.get(key.c_str(), strlen(key.c_str()), &val_len, &flags, &rc);
+			printf("rc=%d, return value=%s\n", rc, value);
+			if (rc != 0) {
+				memcached.get_server_list();
+			}
+			if (value) {
+				free(value);
+			}
+		}
+	}
+
 
 	const char *dgst = "key1";
 	size_t val_len;

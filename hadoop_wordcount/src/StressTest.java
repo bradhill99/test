@@ -66,13 +66,13 @@ public class StressTest {
 		//String[] urls = {"10.31.66.58:8983","10.31.66.59:8983","10.31.66.71:8983","10.31.66.72:8983"};
 		
 		// office lab
-		String[] urls = {"10.31.66.71:8080"};
+		String[] urls = {"192.168.23.153:8983"};
 		// String[] urls = {"10.31.66.59:9900"};
 		
 		Random generator = new Random();    		
 		int r = generator.nextInt(urls.length);
 		// return this format http://10.31.66.58:8983/solr
-		return "http://" + urls[r] + "/solr/ad_hoc_test1";
+		return "http://" + urls[r] + "/solr/collection1";
 	}
 	
 	public void run(String[] args) throws InterruptedException, URISyntaxException {		
@@ -83,11 +83,11 @@ public class StressTest {
 				new AuthScope(uri.getHost(), uri.getPort()),
 				new UsernamePasswordCredentials("solrcloud_trial", "pass"));
     	
-    	httpClient.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
-    	
-    	PoolingClientConnectionManager mgr = (PoolingClientConnectionManager)httpClient.getConnectionManager();
-    	mgr.setDefaultMaxPerRoute(32);
-    	mgr.setMaxTotal(128);
+//    	httpClient.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
+//    	
+//    	PoolingClientConnectionManager mgr = (PoolingClientConnectionManager)httpClient.getConnectionManager();
+//    	mgr.setDefaultMaxPerRoute(32);
+//    	mgr.setMaxTotal(128);
 
 //	      ModifiableSolrParams params = new ModifiableSolrParams();
 //	      params.set(HttpClientUtil.PROP_MAX_CONNECTIONS, 128);

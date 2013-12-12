@@ -21,7 +21,7 @@ if ($arg_nums == 2) {
 # init some golbal variable
 my @g_memcache_servers = ();
 my @g_dead_memcache_servers = ();
-my $LOG_FILE = "/var/log/memcached_monitor.log";
+my $LOG_FILE = "/data/trend/var/log/memcached_monitor.log";
 
 sub monitor {
     my $has_disconnect_server = 0;

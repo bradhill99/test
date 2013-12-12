@@ -1,0 +1,34 @@
+PROJECT=memcached_updator
+include $(FB20_COMMON_MAKE_FILE)
+
+PROTOBUF_DIR = $(THIRD_PARTY_PATH)/google
+CXXFLAGS += -g3
+CXXFLAGS += -I$(FB20_THIRD_PARTY_INCLUDE_PATH) -I$(FB20_COMMON_INCLUDE_PATH)
+LDFLAGS +=  -L$(FB20_LIB_PATH) -lconfig++  -lpthread -lmemcached -llog4cxx -lprotobuf -lboost_program_options -lboost_thread -lboost_unit_test_framework
+target += $(PROJECT).out
+
+
+.PHONY: test rpm clean
+$(target): updater.o fbfile.pb.o
+        $(LINK.cc) -o $@ $^
+
+test_mem: test_mem.o
+        $(LINK.cc) -o $@ $^
+
+test: $(target)
+        $(LINK.cc) -o sha1_updator_test.out Sha1updateTest.cpp
+        ./sha1_updator_test.out
+
+$(tarball_name) :  $(target)
+        mkdir -p bin/
+        cp $(target) bin/
+        cp reload.sh bin/
+        tar czf $(tarball_name)  bin/*  conf/*
+        rm -rf bin/
+
+
+
+
+include $(FB20_COMMON_TARGET_MAKE_FILE)
+
+
