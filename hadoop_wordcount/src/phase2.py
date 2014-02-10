@@ -5,10 +5,20 @@ import fileinput
 import sys
 
 for line in fileinput.input():
+    output = {}
     try:
-        ss_json = json.loads(line)        
-        value_json = json.dumps(ss_json['value'])
-        print value_json[1:-1]
+        ss_json = json.loads(line)
+        output['source'] = ss_json['source']
+        
+        value_json = json.dumps(ss_json['value']).replace("\\", "")[1:-1]
+        #merge source into value json
+        # print value_json 
+        s2_json = json.loads(value_json)
+        s2_json['source'] = output['source']
+        print json.dumps(s2_json)
+        #print json.dumps(output)
+        #output['value'] = json.dumps(ss_json['value'])[1:-1]
+        #print output
     except ValueError:
         continue
     except KeyError:
