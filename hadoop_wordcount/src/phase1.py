@@ -4,13 +4,7 @@ import json
 import fileinput
 import sys
 
-if (len(sys.argv) != 2):
-    print "usage: tc_query file"
-    sys.exit(1)
-
-#for line in fileinput.input():
-f = open(sys.argv[1], 'r')
-for line in f:
+for line in fileinput.input():
     try:
         ss_json = json.loads(line)
     except ValueError:
