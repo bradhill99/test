@@ -104,15 +104,17 @@ class proxy_sender (asynchat.async_chat):
         self.receiver.close_when_done()
         self.close()
 
-class my_http_response ():
+class my_http_response:
     headers = []
     body = ""
     
     def __init__ (self, raw_http_r):
-        p = raw_http_r.find('\r\n\')
+        p = raw_http_r.find('\n\n')
         if p >= 0:
-            return http_reply[p+4:]
-        else body = http_reply
+            headers = http_reply[:p]
+            body = http_reply[p+2:]
+        else: 
+            body = raw_http_r
     
 class proxy_receiver (asynchat.async_chat):
 
@@ -120,6 +122,16 @@ class proxy_receiver (asynchat.async_chat):
 
     channel_counter = 0
     
+    def connect_to_oozie(self, curl_cmd):       
+        for idx in range(1, 10):
+            import commands
+            output = commands.getoutput(curl_cmd)
+            if 'Mechanism level: Request is a replay' in output:
+                from time import sleep
+                sleep(0.05)
+                continue
+            return output
+            
     def __init__ (self, server, (conn, addr)):
         asynchat.async_chat.__init__ (self, conn)
         self.set_terminator ('\n')
@@ -138,31 +150,18 @@ class proxy_receiver (asynchat.async_chat):
         data = re.sub( r'\:8080', '', self.buffer )
         data = re.sub( r'localhost', self.server.there[0], data )
         self.buffer = ''
-        print '<== (%d) %s' % (self.id, repr(data))        
-        self.sender.push (data + '\n')
-        # try curl by myself
-        # curl --negotiate -u : "http://brad-tm6-1.spn.tw.trendnet.org:11000/oozie/"
-        # GET /oozie/ext-2.2/resources/css/ext-all.css HTTP/1.1\r   
+        print '<== (%d) %s' % (self.id, repr(data))
         m = re.search('GET (.*) HTTP.*', data)
         if m:
             curl_cmd = 'curl -s -D - --negotiate -u : ' +  '"http://brad-tm6-1.spn.tw.trendnet.org:11000' + m.group(1) + '"';
             print "cmd=%s" % curl_cmd
-            #output = commands.getoutput(curl_cmd)
-            pipe = popen(curl_cmd)
-            response = httpparse(pipe)
-            data = response.read()            
-            print "s=%s, r=%s" % (response.status, response.reason)
-            print "curl data=%s" % data
-            
-            if response.getheader('content-length') is None:
-                print "not exist~~~"
-                d = dict(response.getheaders())
-                print "data typt"
-                print type(data)
-                print "size=%d" % len(data)
-                #d['content-length'] = type(data)
-                print "curl headers=%s" % d
-            #self.push (output + '\n')
+            output = self.connect_to_oozie(curl_cmd)
+            print 'orig output=%s' % output
+            if '401 Unauthorized' in output:
+                print 'idx=%d' % output.find('\r\n\r\n')
+                output = output[output.find('\r\n\r\n')+4:]
+            print 'curl output=%s' % output
+            self.push (output + '\n')
             
     def handle_close (self):
         print 'Receiver closing (inbuf len %d (%s), ac_in %d, ac_out %d )' % (
