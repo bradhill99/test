@@ -39,17 +39,9 @@ from StringIO import StringIO
 from httplib import HTTPResponse
 from os import popen
 
-class FakeSocket(StringIO):
-    def makefile(self, *args, **kw):
-        return self
+# Global constant
+HTTP_LF = '\r\n'
 
-def httpparse(fp):
-    socket = FakeSocket(fp.read())
-    response = HTTPResponse(socket)
-    response.begin()
-    
-    return response
-    
 class proxy_server (asyncore.dispatcher):
 
     def __init__ (self, host, port):
@@ -65,57 +57,6 @@ class proxy_server (asyncore.dispatcher):
         print 'New connection'
         proxy_receiver (self, self.accept())
 
-class proxy_sender (asynchat.async_chat):
-
-    "Sends data to the server"
-
-    def __init__ (self, receiver, address):
-        asynchat.async_chat.__init__ (self)
-        self.receiver = receiver
-        self.set_terminator (None)
-        self.create_socket (socket.AF_INET, socket.SOCK_STREAM)
-        self.buffer = ''
-        self.set_terminator ('\n')
-        self.connect (address)
-    
-    def handle_connect (self):
-        print 'Sender connected'
-    
-    def collect_incoming_data (self, data):
-        self.buffer = self.buffer + data
-    
-    def found_terminator (self):
-        data = self.buffer
-        self.buffer = ''
-        print '==> (%d) %s' % (self.id, repr(data))
-        self.receiver.push (data + '\n')
-    
-    def handle_close (self):
-        print 'Sender closing (inbuf len %d (%s), ac_in %d, ac_out %d )' % (
-            len( self.buffer ),
-            self.buffer,
-            len( self.ac_in_buffer ),
-            len( self.ac_out_buffer )
-            )
-
-        if len( self.buffer ):
-            self.found_terminator()
-            
-        self.receiver.close_when_done()
-        self.close()
-
-class my_http_response:
-    headers = []
-    body = ""
-    
-    def __init__ (self, raw_http_r):
-        p = raw_http_r.find('\n\n')
-        if p >= 0:
-            headers = http_reply[:p]
-            body = http_reply[p+2:]
-        else: 
-            body = raw_http_r
-    
 class proxy_receiver (asynchat.async_chat):
 
     "Receives data from the caller"
@@ -132,14 +73,26 @@ class proxy_receiver (asynchat.async_chat):
                 continue
             return output
             
+    def send_by_segment(self, data):
+        separate_idx = data.find(HTTP_LF+HTTP_LF)
+        header = data[:separate_idx]
+        body = data[separate_idx+4:]
+        self.push(header+HTTP_LF+HTTP_LF)
+        
+        n = 0x1000
+        lines = [body[i:i+n] for i in range(0, len(body), n)] # split into string list with each size as 0x1000
+        for line in lines:
+            self.push('%x' % len(line) + HTTP_LF)
+            self.push(line + HTTP_LF)
+        self.push('0' + HTTP_LF)
+        self.push(HTTP_LF)
+
     def __init__ (self, server, (conn, addr)):
         asynchat.async_chat.__init__ (self, conn)
         self.set_terminator ('\n')
         self.server = server
         self.id = self.channel_counter
         self.channel_counter = self.channel_counter + 1
-        self.sender = proxy_sender (self, server.there)
-        self.sender.id = self.id
         self.buffer = ''
     
     def collect_incoming_data (self, data):
@@ -156,13 +109,15 @@ class proxy_receiver (asynchat.async_chat):
             curl_cmd = 'curl -s -D - --negotiate -u : ' +  '"http://brad-tm6-1.spn.tw.trendnet.org:11000' + m.group(1) + '"';
             print "cmd=%s" % curl_cmd
             output = self.connect_to_oozie(curl_cmd)
-            print 'orig output=%s' % output
+            print 'orig output=%s' % output            
             if '401 Unauthorized' in output:
-                print 'idx=%d' % output.find('\r\n\r\n')
-                output = output[output.find('\r\n\r\n')+4:]
-            print 'curl output=%s' % output
-            self.push (output + '\n')
-            
+                print 'idx=%d' % output.find(HTTP_LF+HTTP_LF)
+                output = output[output.find(HTTP_LF+HTTP_LF)+4:] # remove first http reponse header because of SPNEGO
+            if 'Content-Length' not in output:
+                self.send_by_segment(output)
+            else:
+                self.push(output + '\n')
+                
     def handle_close (self):
         print 'Receiver closing (inbuf len %d (%s), ac_in %d, ac_out %d )' % (
             len( self.buffer ),
@@ -174,7 +129,6 @@ class proxy_receiver (asynchat.async_chat):
         if len( self.buffer ):
             self.found_terminator()
         
-        self.sender.close_when_done()
         self.close()
 
 if __name__ == '__main__':
