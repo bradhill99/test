@@ -1,60 +1,31 @@
 #!/usr/bin/python
 
-"""HTTP debugging proxy
+"""Oozie proxy
 
-(Presumably) originally by Sam Rushing
-    http://www.nightmare.com/medusa/programming.html
-
-Modified by Phillip Pearson <pp@myelin.co.nz>
-    http://www.myelin.co.nz/notes/xmlrpc-debug-proxy.html
-    (Changes placed in the public domain; do what you will)
-     
-
-A very small proxy for HTTP that dumps out what it sees, so you can debug your 
-XML-RPC without having to decipher the output from a packet sniffer.
-
-This is basically the proxy used in the Medusa asynchronous sockets tutorial 
-(available on http://www.nightmare.com/medusa/programming.html) with a minor 
-adjustment to make it flush its buffers before closing any connections.  Without 
-that it will drop off important things like </methodResponse> :)
-
-Syntax: xmlrpc-debug-proxy.py <host> <port>
-
-This will listen on port 8000+<port> and proxy through to <host>:<port>
-
-e.g. 'aproxy.py localhost 80' listens on localhost:8080 and proxies through to
-     the local web server on port 80.
-     
-To debug stuff connecting to Radio, run 'xmlrpc-debug-proxy.py localhost 5335' 
-and point your scripts at http://localhost:13335/RPC2 (instead of 
-http://localhost:5335/RPC2)
-
+    Since Oozie HTTP enables the Kerberos authentication
 """
 
 import asynchat
 import asyncore
 import socket
 import string
-from StringIO import StringIO
-from httplib import HTTPResponse
-from os import popen
+import re
 
 # Global constant
 HTTP_LF = '\r\n'
 
 class proxy_server (asyncore.dispatcher):
 
-    def __init__ (self, host, port):
+    def __init__ (self, host, port, listen_port):
         asyncore.dispatcher.__init__ (self)
         self.create_socket (socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
         self.there = (host, port)
-        here = ('', port + 8000)
+        here = ('', listen_port)
         self.bind (here)
         self.listen (5)
     
-    def handle_accept (self):
-        print 'New connection'
+    def handle_accept (self):        
         proxy_receiver (self, self.accept())
 
 class proxy_receiver (asynchat.async_chat):
@@ -99,43 +70,49 @@ class proxy_receiver (asynchat.async_chat):
         self.buffer = self.buffer + data
         
     def found_terminator (self):
-        import re
         data = re.sub( r'\:8080', '', self.buffer )
         data = re.sub( r'localhost', self.server.there[0], data )
         self.buffer = ''
-        print '<== (%d) %s' % (self.id, repr(data))
         m = re.search('GET (.*) HTTP.*', data)
         if m:
             curl_cmd = 'curl -s -D - --negotiate -u : ' +  '"http://brad-tm6-1.spn.tw.trendnet.org:11000' + m.group(1) + '"';
-            print "cmd=%s" % curl_cmd
-            output = self.connect_to_oozie(curl_cmd)
-            print 'orig output=%s' % output            
+            output = self.connect_to_oozie(curl_cmd)           
             if '401 Unauthorized' in output:
-                print 'idx=%d' % output.find(HTTP_LF+HTTP_LF)
                 output = output[output.find(HTTP_LF+HTTP_LF)+4:] # remove first http reponse header because of SPNEGO
             if 'Content-Length' not in output:
                 self.send_by_segment(output)
             else:
                 self.push(output + '\n')
                 
-    def handle_close (self):
-        print 'Receiver closing (inbuf len %d (%s), ac_in %d, ac_out %d )' % (
-            len( self.buffer ),
-            self.buffer,
-            len( self.ac_in_buffer ),
-            len( self.ac_out_buffer )
-            )
-
+    def handle_close (self):        
         if len( self.buffer ):
             self.found_terminator()
         
         self.close()
 
+def show_usage():
+    print'''Usage:
+    python oozie_proxy.py <oozie_host:port> [listen_port]
+    
+    oozie_proxy.py will listen on listen_port, redirect all HTTP traffic to oozie_host:port
+    If no specify listen_port, it will listen on port+8000'''
+
 if __name__ == '__main__':
     import sys
-    import string
-    if len(sys.argv) < 3:
-        print 'Usage: %s <server-host> <server-port>' % sys.argv[0]
+    if len(sys.argv) < 2 or not re.search('.*:.*', sys.argv[1]):
+        show_usage()
+        sys.exit(0)
+
+    host = ''
+    port = ''
+    listen_port = 0
+
+    host = sys.argv[1].split(':')[0]
+    port = sys.argv[1].split(':')[1]
+    if len(sys.argv) == 3:
+        listen_port = int(sys.argv[2])
     else:
-        ps = proxy_server (sys.argv[1], string.atoi (sys.argv[2]))
-        asyncore.loop()
+        listen_port = int(port) + 8000
+        
+    ps = proxy_server (host, int(port), listen_port)
+    asyncore.loop()
