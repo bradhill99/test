@@ -9,7 +9,19 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 
-public class SequenceFileRead {  
+public class SequenceFileRead {
+    /*
+     * This is the old version to write protobuf byte array to file, but seems like this will produce some garbage bytes, and file content is
+     * not protobuf (can't be decoded by protoc command by using protoc --decode_raw < file
+    public class SequenceFileRead {  
+    private static void writeFileAsByte(byte[] data, String filepath) throws IOException {
+        File file = new File(filepath);
+        
+        DataOutputStream dis = new DataOutputStream((new FileOutputStream(file)));
+        dis.write(data);
+        dis.close();
+    }*/
+    
     private static void writeFileAsByte(Configuration conf, Path localDest, BytesWritable val) throws IOException {
         FileSystem rawLocalFs = ((LocalFileSystem) FileSystem.getLocal(conf)).getRaw();
         OutputStream out = rawLocalFs.create(localDest);
