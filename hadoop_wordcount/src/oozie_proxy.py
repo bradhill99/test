@@ -11,9 +11,6 @@ import socket
 import string
 import re
 
-# Global constant
-HTTP_LF = '\r\n'
-
 class proxy_server (asyncore.dispatcher):
 
     def __init__ (self, host, port, listen_port):
@@ -29,9 +26,7 @@ class proxy_server (asyncore.dispatcher):
         proxy_receiver (self, self.accept())
 
 class proxy_receiver (asynchat.async_chat):
-
-    "Receives data from the caller"
-
+    HTTP_LF = '\r\n' # constant, DONT CHANGE IT!!!!
     channel_counter = 0
     
     def connect_to_oozie(self, curl_cmd):       
@@ -45,18 +40,18 @@ class proxy_receiver (asynchat.async_chat):
             return output
             
     def send_by_segment(self, data):
-        separate_idx = data.find(HTTP_LF+HTTP_LF)
+        separate_idx = data.find(self.HTTP_LF+self.HTTP_LF)
         header = data[:separate_idx]
         body = data[separate_idx+4:]
-        self.push(header+HTTP_LF+HTTP_LF)
+        self.push(header+self.HTTP_LF+self.HTTP_LF)
         
         n = 0x1000
         lines = [body[i:i+n] for i in range(0, len(body), n)] # split into string list with each size as 0x1000
         for line in lines:
-            self.push('%x' % len(line) + HTTP_LF)
-            self.push(line + HTTP_LF)
-        self.push('0' + HTTP_LF)
-        self.push(HTTP_LF)
+            self.push('%x' % len(line) + self.HTTP_LF)
+            self.push(line + self.HTTP_LF)
+        self.push('0' + self.HTTP_LF)
+        self.push(self.HTTP_LF)
 
     def __init__ (self, server, (conn, addr)):
         asynchat.async_chat.__init__ (self, conn)
@@ -75,10 +70,10 @@ class proxy_receiver (asynchat.async_chat):
         self.buffer = ''
         m = re.search('GET (.*) HTTP.*', data)
         if m:
-            curl_cmd = 'curl -s -D - --negotiate -u : ' +  '"http://brad-tm6-1.spn.tw.trendnet.org:11000' + m.group(1) + '"';
+            curl_cmd = 'curl -s -D - --negotiate -u : ' + '"' + "http://%s:%s" % (self.server.there[0], self.server.there[1]) + m.group(1) + '"';
             output = self.connect_to_oozie(curl_cmd)           
             if '401 Unauthorized' in output:
-                output = output[output.find(HTTP_LF+HTTP_LF)+4:] # remove first http reponse header because of SPNEGO
+                output = output[output.find(self.HTTP_LF+self.HTTP_LF)+4:] # remove first http reponse header because of SPNEGO
             if 'Content-Length' not in output:
                 self.send_by_segment(output)
             else:
@@ -113,6 +108,8 @@ if __name__ == '__main__':
         listen_port = int(sys.argv[2])
     else:
         listen_port = int(port) + 8000
-        
+    
+    HOST = host
+    PORT = port    
     ps = proxy_server (host, int(port), listen_port)
     asyncore.loop()

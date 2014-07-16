@@ -25,10 +25,11 @@
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/solr-4.2.0/dist/solrj-lib/wstx-asl-3.2.7.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/solr-4.2.0/dist/solrj-lib/zookeeper-3.4.5.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/commons-cli-1.2.jar" sourcepath="C:/Users/brad_liu/.m2/repository/commons-cli/commons-cli/1.2/commons-cli-1.2-sources.jar"/>
-	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hadoop-core-0.20.2-cdh3u5.jar"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/hbase-0.90.6-cdh3u4.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/pig-0.9.1+tmh5.3.jar"/>
 	<classpathentry kind="lib" path="D:/SPN/dumbo/pigunit.jar"/>
+	<classpathentry kind="lib" path="C:/Users/brad_liu/Downloads/log4j-1.2.15.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/hadoop-2.2"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

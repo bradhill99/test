@@ -46,6 +46,10 @@ public class WordCount {
 	   public static void main(String[] args) throws Exception {
 	     JobConf conf = new JobConf(WordCount.class);
 	     conf.setJobName("wordcount");
+	     if (System.getenv("HADOOP_TOKEN_FILE_LOCATION") != null) {
+	         conf.set("mapreduce.job.credentials.binary",
+	         System.getenv("HADOOP_TOKEN_FILE_LOCATION"));
+	         }
 
      conf.setOutputKeyClass(Text.class);
      conf.setOutputValueClass(IntWritable.class);
