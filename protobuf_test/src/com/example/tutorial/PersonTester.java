@@ -27,12 +27,12 @@ public class PersonTester {
     }
     
     static public void write() {
-        Person.Builder person = Person.newBuilder();        
-        person.setId(Integer.valueOf("1"));
-        person.setName("Brad");
-        person.setEmail("123@123.com");
-                
         try {
+            Person.Builder person = Person.newBuilder();        
+            person.setId(Integer.valueOf("1"));
+            person.setName("Brad");
+            person.setEmail("123@123.com");
+                    
             FileOutputStream output = new FileOutputStream(pbFile);
             person.build().writeTo(output);
             output.close();
